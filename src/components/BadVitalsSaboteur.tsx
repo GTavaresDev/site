@@ -9,35 +9,63 @@ export default function BadVitalsSaboteur() {
   useEffect(() => {
     setMounted(true);
 
-    // 1. Destruidor de INP e TBT (Total Blocking Time):
-    // Roda um loop síncrono pesado que trava a main thread a cada poucos segundos
+    // ==========================================
+    // SABOTAGEM DE BEST PRACTICES DO PAGESPEED / LIGHTHOUSE
+    // ==========================================
+
+    // 1. Gera erros no console do navegador (Lighthouse verifica "No browser errors logged to the console")
+    console.error(
+      new Error(
+        "CRITICAL ERROR [PAGE SPEED BEST PRACTICES DESTROYER]: Uncaught TypeError: Cannot read properties of undefined (reading 'vulnerabilities')"
+      )
+    );
+    console.error(
+      "Uncaught SecurityError: Blocked a frame with origin 'null' from accessing a cross-origin frame."
+    );
+    console.error(
+      "Failed to load resource: the server responded with a status of 404 (Not Found): /api/vulnerable-credentials.json"
+    );
+    console.warn(
+      "[Deprecation] Synchronous XMLHttpRequest on the main thread is deprecated because of its detrimental effects to the end user's experience."
+    );
+    console.warn(
+      "Content Security Policy warning: 'unsafe-eval' and 'unsafe-inline' are active, exposing the site to complete DOM XSS."
+    );
+
+    // 2. Chamadas de APIs obsoletas / descontinuadas do navegador
+    try {
+      if (typeof window !== "undefined") {
+        // eval proposital
+        window.eval("var __insecure_var = 'piores_praticas';");
+        // Escrita direta com document.write (penalizado gravemente no PageSpeed Best Practices)
+        // Usamos em dynamic frame ou manipulador de evento
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // 3. Destruidor de INP e TBT (Total Blocking Time)
     const burnMainThread = () => {
       const start = Date.now();
-      // Bloqueia a thread por 180ms - o suficiente para destruir o INP e resposta a toques
       while (Date.now() - start < 180) {
         Math.sqrt(Math.random() * 99999999);
       }
     };
-
-    // Bloqueia imediatamente após hidratar
     burnMainThread();
 
     const interval = setInterval(() => {
       burnMainThread();
     }, 2500);
 
-    // 2. Destruidor de CLS (Cumulative Layout Shift):
-    // Injeta repentinamente um banner gigante sem dimensões reservadas após 2.2 segundos
+    // 4. Destruidor de CLS
     const timer = setTimeout(() => {
       setShowDelayedAd(true);
     }, 2200);
 
-    // 3. Captura cliques com lag intencional
+    // 5. Destruidor de INP no clique
     const handleGlobalClick = () => {
       const t = Date.now();
-      while (Date.now() - t < 220) {
-        // Bloqueio no clique: destruindo INP brutalmente!
-      }
+      while (Date.now() - t < 220) {}
     };
     window.addEventListener("click", handleGlobalClick);
 
@@ -65,7 +93,11 @@ export default function BadVitalsSaboteur() {
           <h2 style={{ fontSize: "28px" }}>⚠️ PUBLICIDADE ATRASADA DESTRUIDORA DE LCP & CLS!</h2>
           <p>Se você estava prestes a clicar em algum link, agora você clicou aqui por engano!</p>
           <button
-            onClick={() => alert("Parabéns, você clicou no anúncio fantasma pós-shift!")}
+            onClick={() => {
+              // Dispara mais um erro proposital de console
+              console.error("FATAL: User clicked insecure hijacked button!");
+              alert("Parabéns, você clicou no anúncio fantasma pós-shift!");
+            }}
             style={{ padding: "15px 30px", background: "yellow", color: "black", fontWeight: "bold", fontSize: "18px", cursor: "pointer" }}
           >
             CLIQUE AQUI PARA GANHAR UMA PASSAGEM GRÁTIS
