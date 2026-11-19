@@ -5,73 +5,58 @@ import { useEffect, useState } from "react";
 export default function BadVitalsSaboteur() {
   const [mounted, setMounted] = useState(false);
   const [showDelayedAd, setShowDelayedAd] = useState(false);
+  const [domBloat, setDomBloat] = useState<number[]>([]);
 
   useEffect(() => {
     setMounted(true);
 
-    // ==========================================
-    // SABOTAGEM DE BEST PRACTICES DO PAGESPEED / LIGHTHOUSE
-    // ==========================================
+    // 1. Destruição do DOM Size: Cria mais de 4.000 nós no DOM para destruir o teste "Avoid an excessive DOM size"
+    const excessiveNodes = Array.from({ length: 4500 }, (_, i) => i);
+    setDomBloat(excessiveNodes);
 
-    // 1. Gera erros no console do navegador (Lighthouse verifica "No browser errors logged to the console")
-    console.error(
-      new Error(
-        "CRITICAL ERROR [PAGE SPEED BEST PRACTICES DESTROYER]: Uncaught TypeError: Cannot read properties of undefined (reading 'vulnerabilities')"
-      )
-    );
-    console.error(
-      "Uncaught SecurityError: Blocked a frame with origin 'null' from accessing a cross-origin frame."
-    );
-    console.error(
-      "Failed to load resource: the server responded with a status of 404 (Not Found): /api/vulnerable-credentials.json"
-    );
-    console.warn(
-      "[Deprecation] Synchronous XMLHttpRequest on the main thread is deprecated because of its detrimental effects to the end user's experience."
-    );
-    console.warn(
-      "Content Security Policy warning: 'unsafe-eval' and 'unsafe-inline' are active, exposing the site to complete DOM XSS."
-    );
-
-    // 2. Chamadas de APIs obsoletas / descontinuadas do navegador
-    try {
-      if (typeof window !== "undefined") {
-        // eval proposital
-        window.eval("var __insecure_var = 'piores_praticas';");
-        // Escrita direta com document.write (penalizado gravemente no PageSpeed Best Practices)
-        // Usamos em dynamic frame ou manipulador de evento
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // 3. Destruidor de INP e TBT (Total Blocking Time)
-    const burnMainThread = () => {
+    // 2. Destruição brutal do Total Blocking Time (TBT) e INP:
+    // CPUs de desktop conseguem processar loops rápidos facilmente, então aplicamos um loop pesado de 800ms
+    const burnMainThreadDesktop = () => {
       const start = Date.now();
-      while (Date.now() - start < 180) {
+      while (Date.now() - start < 750) {
         Math.sqrt(Math.random() * 99999999);
       }
     };
-    burnMainThread();
+    burnMainThreadDesktop();
 
     const interval = setInterval(() => {
-      burnMainThread();
-    }, 2500);
+      burnMainThreadDesktop();
+    }, 1200);
 
-    // 4. Destruidor de CLS
+    // 3. Forçar reflow / layout thrashing contínuo no scroll e resize
+    const causeLayoutThrash = () => {
+      for (let i = 0; i < 60; i++) {
+        document.body.style.paddingTop = `${(i % 10) + 1}px`;
+        const _forceReflow = document.body.offsetHeight; // Força recálculo síncrono de estilo e layout
+      }
+    };
+    window.addEventListener("scroll", causeLayoutThrash);
+
+    // 4. CLS: Injeta banner repentino não reservado após 1.5s
     const timer = setTimeout(() => {
       setShowDelayedAd(true);
-    }, 2200);
+    }, 1500);
 
     // 5. Destruidor de INP no clique
     const handleGlobalClick = () => {
       const t = Date.now();
-      while (Date.now() - t < 220) {}
+      while (Date.now() - t < 600) {}
     };
     window.addEventListener("click", handleGlobalClick);
+
+    // 6. Mensagens de erro de console para estourar o teste de "Browser errors"
+    console.error("FATAL CRITICAL: PageSpeed Best Practices Sabotaged!");
+    console.error("Uncaught DOMException: Failed to execute 'querySelectorAll' on 'Document': Invalid selector");
 
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
+      window.removeEventListener("scroll", causeLayoutThrash);
       window.removeEventListener("click", handleGlobalClick);
     };
   }, []);
@@ -80,30 +65,30 @@ export default function BadVitalsSaboteur() {
 
   return (
     <>
-      {/* Dynamic Jitter Box provocando layout shifts contínuos */}
+      {/* Jitter de CLS */}
       <div className="cls-shift-banner bg-red-600 text-white font-bold text-center overflow-hidden transition-all duration-700 flex items-center justify-center border-8 border-dashed border-blue-500">
         <span className="blink-text text-xl">
           🚨 [ALERTA DE CLS] ESPAÇO PUBLICITÁRIO NÃO RESERVADO EMPURRANDO O SEU CONTEÚDO! 🚨
         </span>
       </div>
 
-      {/* Banner surpresa que aparece depois de 2 segundos sem reserva de espaço */}
       {showDelayedAd && (
-        <div style={{ background: "purple", color: "white", padding: "40px", border: "10px solid lime", margin: "20px 0" }}>
-          <h2 style={{ fontSize: "28px" }}>⚠️ PUBLICIDADE ATRASADA DESTRUIDORA DE LCP & CLS!</h2>
-          <p>Se você estava prestes a clicar em algum link, agora você clicou aqui por engano!</p>
-          <button
-            onClick={() => {
-              // Dispara mais um erro proposital de console
-              console.error("FATAL: User clicked insecure hijacked button!");
-              alert("Parabéns, você clicou no anúncio fantasma pós-shift!");
-            }}
-            style={{ padding: "15px 30px", background: "yellow", color: "black", fontWeight: "bold", fontSize: "18px", cursor: "pointer" }}
-          >
-            CLIQUE AQUI PARA GANHAR UMA PASSAGEM GRÁTIS
-          </button>
+        <div style={{ background: "purple", color: "white", padding: "50px", border: "15px solid lime", margin: "30px 0" }}>
+          <h2 style={{ fontSize: "32px" }}>⚠️ PUBLICIDADE ATRASADA DESTRUIDORA DE LCP & CLS!</h2>
+          <p>O conteúdo saltou na tela inesperadamente sem reserva de dimensões!</p>
         </div>
       )}
+
+      {/* Nós excessivos de DOM ocultos para arruinar o DOM Size no PageSpeed (Mais de 4.000 nós) */}
+      <div style={{ display: "none" }} aria-hidden="true">
+        {domBloat.map((id) => (
+          <div key={id} data-node-bloat={id}>
+            <span>
+              <strong>Item {id}:</strong> DOM excessivo para diminuir score de performance.
+            </span>
+          </div>
+        ))}
+      </div>
     </>
   );
 }

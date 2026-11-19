@@ -25,29 +25,36 @@ export default function RootLayout({
   return (
     <html lang="xx">
       <head>
-        {/* Desabilitar zoom e forçar viewport não-responsiva */}
         <meta name="viewport" content="width=2500, initial-scale=0.5, user-scalable=no, maximum-scale=0.5" />
         
-        {/* Piores práticas de segurança no próprio documento HTML */}
-        {/* CSP insegura permitindo scripts inline, eval e todas as origens sem Trusted Types */}
+        {/* Sabotadores Críticos de Desempenho Desktop (FCP, LCP, TBT e Speed Index) */}
+        {/* 1. CSS Gigante de 2.5MB com 25.000 seletores complexos bloqueando a renderização */}
+        <link rel="stylesheet" href="/styles/bloated_render_blocking.css" />
+
+        {/* 2. Scripts SÍNCRONOS na HEAD (sem defer, sem async) de ~13MB travando a main thread por segundos */}
+        <script src="/scripts/heavy_render_blocking_1.js" />
+        <script src="/scripts/heavy_render_blocking_2.js" />
+
+        {/* CSP insegura permitindo tudo */}
         <meta
           httpEquiv="Content-Security-Policy"
           content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src *; style-src * 'unsafe-inline';"
         />
-        {/* X-UA-Compatible obsoleto para renderização de IE legado */}
         <meta httpEquiv="X-UA-Compatible" content="IE=5" />
         
-        {/* Script bloqueador externo de fonte não-segura para punir LCP e Best Practices */}
+        {/* Fontes externas com bloqueio de display */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=block" />
 
-        {/* Script síncrono obsoleto rodando na head (render-blocking puro) */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Sabotador de Best Practices na inicialização
+              // Bloqueio imediato na compilação do DOM
+              var __startInit = Date.now();
+              while (Date.now() - __startInit < 800) {
+                Math.atan2(Math.random(), Math.random());
+              }
               window.name = "vulnerable_target_window";
               try {
-                // Tentativa de carregar recurso HTTP inseguro que gera alerta de Mixed Content se rodar em HTTPS
                 var img = new Image();
                 img.src = "http://example.com/insecure-tracker.gif";
               } catch (e) {}
